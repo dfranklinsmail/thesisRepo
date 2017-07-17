@@ -11,6 +11,8 @@
            - tabulate the results in an output to console
            - % of proteins correctly classified
 """
+import os
+import sys
 
 class Generate25PDBComapreReport:
 
@@ -24,5 +26,20 @@ class Generate25PDBComapreReport:
 
     def parse25PDBProteinClassification(self):
         """ loads the 25PDB.csv file and parses it returning a set of proteinNames and classifications """
-        mySet = set()
-        return mySet
+        listOfProteinAndClass = list()
+        f = open(os.path.join(sys.path[0], '25PDB.csv'), 'r')
+        line = f.readline()
+        line = f.readline()
+        while line :
+            values = line.split(',')
+            listOfProteinAndClass.append((values[0], values[3]))
+            line = f.readline()
+        
+        return listOfProteinAndClass
+
+    def run(self)
+        """ main app logic """
+
+if __name__ == "__main__":
+    app = Generate25PDBComapreReport()
+    app.run()
