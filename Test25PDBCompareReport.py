@@ -9,8 +9,7 @@ class Test25PDBCompareReport(unittest.TestCase):
     def test_fetchHTML(self):
         print("in fetchHML test")
         myReport = Generate25PDBComapreReport()
-        html = myReport.fetchHTML("1ABV")
-        print(html)
+        html = myReport.fetchHTML("1ABV_")
         self.assertFalse(not html)
 
     def test_parseClassification(self):

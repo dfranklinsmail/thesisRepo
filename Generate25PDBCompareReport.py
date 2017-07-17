@@ -13,15 +13,31 @@
 """
 import os
 import sys
+import urllib.request
 
 class Generate25PDBComapreReport:
 
     def fetchHTML(self, proteinName):
-        """ mehtod mimics linux wget with a hard coded url and returns protein classificaiton info """
-        return proteinName
+        """ mehtod mimics linux wget with a hard coded url 
+        and returns protein classificaiton info """
+        
+        if (len(proteinName) > 4):
+            proteinName = proteinName[: (4 - len(proteinName))]
+        
+        print("the length of protein " + str(len(proteinName)))
+        print("the protein" + proteinName)
+        url = "http://www.rcsb.org/pdb/explore/macroMoleculeData.do?structureId="+proteinName
+        print("fetching html for url ")
+        print(url)
+        
+        response = urllib.request.urlopen(url)
+        html = response.read()
+
+        return html
 
     def parseClassification(self, html, proteinName):
         """ takes html and returns classification information """
+        
         return html
 
     def parse25PDBProteinClassification(self):
@@ -37,7 +53,7 @@ class Generate25PDBComapreReport:
         
         return listOfProteinAndClass
 
-    def run(self)
+    def run(self):
         """ main app logic """
 
 if __name__ == "__main__":
