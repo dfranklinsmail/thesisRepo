@@ -14,6 +14,7 @@
 import os
 import sys
 import urllib.request
+import re
 
 class Generate25PDBComapreReport:
     SCOP_TITLE = "Domain Annotation: SCOP Classification"
@@ -42,12 +43,40 @@ class Generate25PDBComapreReport:
 
     def parseClassification(self, html, proteinName):
         """ takes html and returns classification information """
-        index = html.index(self.SCOP_TITLE)
-        if (index >= 0):
-            html = html[(index+len(self.SCOP_TITLE)):]
-            print(html)
+        classification = ''
+        nameToClass = self.parseProteinAndClass(html)
+        if proteinName in nameToClass:
+            classification = nameToClass[proteinName]
+        
+        return classification
 
-        return html
+    def parseProteinAndClass(self, html):
+        """ """
+        nameToClass = {}
+        tableStartTag = "<tbody>"
+        tableEndTag = "</tbody>"
+        index = html.index(self.SCOP_TITLE)
+        print(index)
+        if (index >= 0):
+            start = html.index(tableStartTag, index+ len(self.SCOP_TITLE))
+            end = html.index(tableEndTag, start+ len(tableStartTag))
+        
+            html = html[start + len(tableStartTag) :end - len(tableEndTag)]
+            html = html.replace(' ', '')
+            html = html.replace('\n', '')
+            trs = html.split("<tr")
+
+            for row in trs :
+                if (len(row) > 0) :
+                    print(row)
+                    tdData = re.findall(r'<td.*?>(.*?)<\/td>', row)
+                    proteinName = tdData[1]
+                    classification = re.findall(r'<a.*?>(.*?)<\/a>', tdData[2])[0]
+                    print(proteinName)
+                    print(classification)
+                    nameToClass[proteinName] = classification
+
+        return nameToClass
 
     def parse25PDBProteinClassification(self):
         """ loads the 25PDB.csv file and parses it returning a set of proteinNames and classifications """
