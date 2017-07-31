@@ -18,12 +18,18 @@ class Test25PDBCompareReport(unittest.TestCase):
         myReport = Generate25PDBComapreReport()
         classification = myReport.parseClassification(testHTML, "1ABV")
         print(classification)
+        
         self.assertFalse(not classification)
 
     def test_parse25PDBProteinClassification(self):
         print("in parseClassification test")
         myReport = Generate25PDBComapreReport()
         setOfProteinToClass = myReport.parse25PDBProteinClassification()
-        
+        print(setOfProteinToClass)
         print(" with set size " + str(len(setOfProteinToClass)))
         self.assertTrue(len(setOfProteinToClass)  == 1673)
+
+    def test_formatChainPostFix(self):
+        myReport = Generate25PDBComapreReport()
+        chainName = myReport.formatChainPostFix("A1-399")
+        print(chainName)
