@@ -77,26 +77,71 @@ class Generate25PDBComapreReport:
         return nameToClass
 
     def formatChainPostFix(self, chainName):
-        if (len(chainName) > 1) :
-            chainName = chainName[0:1] + ':' + chainName[1:]
+        if len(chainName) > 1 :
+                result = chainName[:1] + ':' + chainName[1:]
+        else:
+            result = chainName[:1]
+        return result
 
-        return chainName
+    '''
+     tried something but backingout
+     def formatChainPostFix(self, chainName):
+        if len(chainName) > 1 :
+            index = chainName.index(':')
+            if chainName.startswith('_') and index > 1 :
+                result = ':'+ chainName[index:]
+            elif index > 1 :
+                result = chainName[0:1] + ':' + chainName[index:]
+            else:
+                result = chainName[0:1]
+        return result
+    
+    def formatProtein(self, proteinName):
+        ' take the first four characters from the protein name
+            if there's a : format the rest of the chain
+        '
+        result = proteinName [0:4] + self.formatChainPostFix(proteinName[4:])
+        print(result)
+        return result
+    '''
 
-    def parse25PDBProteinClassification(self):
+    def parse25PDBProteinClassification(self, filename):
         """ loads the 25PDB.csv file and parses it returning a set of proteinNames and classifications """
         listOfProteinAndClass = list()
-        f = open(os.path.join(sys.path[0], '25PDB.csv'), 'r')
+        f = open(os.path.join(sys.path[0], filename), 'r')
         line = f.readline()
         line = f.readline()
         while line :
             values = line.split(',')
-            listOfProteinAndClass.append((values[0], values[3]))
+            protein = values[3].replace('\n', '')
+            listOfProteinAndClass.append((values[0], protein))
             line = f.readline()
         
         return listOfProteinAndClass
 
+
+    def classificationMatches(self, scopClass, htmlClass) :
+        if scopClass == 'a' and htmlClass == '' :
+            result = True
+        elif scopClass == 'b' and htmlClass == '' :
+            result = True
+        elif scopClass == 'c' and htmlClass == '' :
+            result = True
+        elif scopClass == 'd' and htmlClass == '' :
+            result = True
+        return result
+
     def run(self):
         """ main app logic """
+        print("in the main")
+        proteinAndClasses = self.parse25PDBProteinClassification('test25PDB.csv')
+        for  proteinAndClass in proteinAndClasses :
+            print(proteinAndClass[0])
+            print(proteinAndClass[1])
+            html = self.fetchHTML(proteinAndClass[0])
+            classification = self.parseClassification(html, proteinAndClass[0])
+            if self.classificationMatches(proteinAndClass[1], classification) :
+                print("")
 
 
 if __name__ == "__main__":
