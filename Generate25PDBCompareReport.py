@@ -14,7 +14,10 @@
 import os
 import sys
 import urllib.request
+from urllib.error import HTTPError
+from urllib.error import URLError
 import re
+from socket import timeout
 
 class Generate25PDBComapreReport:
     SCOP_TITLE = "Domain Annotation: SCOP Classification"
@@ -31,18 +34,23 @@ class Generate25PDBComapreReport:
             proteinName = proteinName[: (4 - len(proteinName))]
         
         #print("the length of protein " + str(len(proteinName)))
-        #print("the protein" + proteinName)
+        print("the protein " + proteinName)
         url = "http://www.rcsb.org/pdb/explore/macroMoleculeData.do?structureId="+proteinName
         #print("fetching html for url ")
         #print(url)
         
-        response = urllib.request.urlopen(url)
-        html = response.read()
+        try:
+            html = urllib.request.urlopen(url, timeout=10).read().decode('utf-8')
+        except (HTTPError, URLError) as error:
+            print('Data for protein %s not retrieved because %s\nURL: %s', proteinName, error, url)
+        except timeout:
+            print('socket timed out - URL %s', url)
         
         return html
 
     def parseClassification(self, html, proteinName):
         """ takes html and returns classification information """
+        print("looking for protein name "+proteinName)
         classification = ''
         nameToClass = self.parseProteinAndClass(html, proteinName)
         print(nameToClass)
@@ -56,9 +64,9 @@ class Generate25PDBComapreReport:
         nameToClass = {}
         tableStartTag = "<tbody>"
         tableEndTag = "</tbody>"
-        index = html.index(self.SCOP_TITLE)
+        index = html.find(self.SCOP_TITLE)
 
-        if (index >= 0):
+        if index >= 0 :
             start = html.index(tableStartTag, index+ len(self.SCOP_TITLE))
             end = html.index(tableEndTag, start+ len(tableStartTag))
         
@@ -73,37 +81,19 @@ class Generate25PDBComapreReport:
                     chainPostFix = self.formatChainPostFix(tdData[0])
                     classification = re.findall(r'<a.*?>(.*?)<\/a>', tdData[2])[0]
                     nameToClass[proteinName+chainPostFix] = classification
-
+        else :
+            print('could not find scop string in html')
         return nameToClass
 
     def formatChainPostFix(self, chainName):
-        if len(chainName) > 1 :
-                result = chainName[:1] + ':' + chainName[1:]
+        if len(chainName) == 1 :
+                result = ''
+        elif len(chainName) > 1 :
+            result = chainName[:1] + ':' + chainName[1:]
         else:
             result = chainName[:1]
-        return result
 
-    '''
-     tried something but backingout
-     def formatChainPostFix(self, chainName):
-        if len(chainName) > 1 :
-            index = chainName.index(':')
-            if chainName.startswith('_') and index > 1 :
-                result = ':'+ chainName[index:]
-            elif index > 1 :
-                result = chainName[0:1] + ':' + chainName[index:]
-            else:
-                result = chainName[0:1]
         return result
-    
-    def formatProtein(self, proteinName):
-        ' take the first four characters from the protein name
-            if there's a : format the rest of the chain
-        '
-        result = proteinName [0:4] + self.formatChainPostFix(proteinName[4:])
-        print(result)
-        return result
-    '''
 
     def parse25PDBProteinClassification(self, filename):
         """ loads the 25PDB.csv file and parses it returning a set of proteinNames and classifications """
@@ -121,28 +111,36 @@ class Generate25PDBComapreReport:
 
 
     def classificationMatches(self, scopClass, htmlClass) :
-        if scopClass == 'a' and htmlClass == '' :
+        print('matching scopClass '+scopClass+' with htmlClass '+htmlClass)
+        if scopClass == 'a' and htmlClass == 'Allalphaproteins' :
             result = True
-        elif scopClass == 'b' and htmlClass == '' :
+        elif scopClass == 'b' and htmlClass == 'Allbetaproteins' :
             result = True
-        elif scopClass == 'c' and htmlClass == '' :
+        elif scopClass == 'c' and htmlClass == 'Alphaandbetaproteins(a/b)' :
             result = True
-        elif scopClass == 'd' and htmlClass == '' :
+        elif scopClass == 'd' and htmlClass == 'Alphaandbetaproteins(a+b)' :
             result = True
+        else :
+            result = False
         return result
 
     def run(self):
         """ main app logic """
         print("in the main")
-        proteinAndClasses = self.parse25PDBProteinClassification('test25PDB.csv')
+        proteinAndClasses = self.parse25PDBProteinClassification('25PDB.csv')
         for  proteinAndClass in proteinAndClasses :
             print(proteinAndClass[0])
             print(proteinAndClass[1])
+            print('fetching raw html for protein '+proteinAndClass[0])
             html = self.fetchHTML(proteinAndClass[0])
-            classification = self.parseClassification(html, proteinAndClass[0])
-            if self.classificationMatches(proteinAndClass[1], classification) :
-                print("")
-
+            if len(html) > 0  :
+                classification = self.parseClassification(html, proteinAndClass[0])
+                if self.classificationMatches(proteinAndClass[1], classification) :
+                    print("True")
+                else :
+                    print("False")
+            else :
+                print("could not get html for protein "+proteinAndClass[0])
 
 if __name__ == "__main__":
     app = Generate25PDBComapreReport()
