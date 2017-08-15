@@ -42,8 +42,11 @@ class Test25PDBCompareReport(unittest.TestCase):
         chainName = myReport.formatChainPostFix("A1-399")
         print(chainName)
 
-    def test_formatProtein(self):
+    def test_twoItemsFormatChainPostFix(self) :
         myReport = Generate25PDBComapreReport()
-        print(myReport.formatProtein('3EGB_:122-123'))
-        print(myReport.formatProtein('3EGBB:122-123'))
-        print(myReport.formatProtein('3EGBC'))
+        values = myReport.formatChainPostFix('a,b')
+        print(values)
+        print(isinstance(values, str))
+        for value in values :
+            print(value)
+            print(isinstance(value, str))

@@ -53,10 +53,19 @@ class Generate25PDBComapreReport:
         print("looking for protein name "+proteinName)
         classification = ''
         nameToClass = self.parseProteinAndClass(html, proteinName)
+        print('trying to find protein and class name')
+        print(proteinName)
         print(nameToClass)
         if proteinName in nameToClass:
             classification = nameToClass[proteinName]
+        elif len(nameToClass) == 1 :
+            classification = next(iter(nameToClass.values()))
+        elif '_' in proteinName:
+            proteinName = proteinName.replace('_', 'A')
+            if proteinName in nameToClass:
+                classification = nameToClass[proteinName]
         
+        print(classification)
         return classification
 
     def parseProteinAndClass(self, html, proteinName):
@@ -80,14 +89,24 @@ class Generate25PDBComapreReport:
                     tdData = re.findall(r'<td.*?>(.*?)<\/td>', row)
                     chainPostFix = self.formatChainPostFix(tdData[0])
                     classification = re.findall(r'<a.*?>(.*?)<\/a>', tdData[2])[0]
-                    nameToClass[proteinName+chainPostFix] = classification
+                    if isinstance(chainPostFix, str) :
+                        nameToClass[proteinName[0:4]+chainPostFix] = classification
+                    else :
+                        for cPostFix in chainPostFix :
+                            nameToClass[proteinName[0:4]+cPostFix] = classification
         else :
             print('could not find scop string in html')
         return nameToClass
 
     def formatChainPostFix(self, chainName):
-        if len(chainName) == 1 :
-                result = ''
+        if ',' in chainName :
+            result = []
+            for newCN in chainName.split(',') :
+                result.append(self.formatChainPostFix(newCN))
+        elif chainName == '_' :
+            result = 'A'
+        elif len(chainName) == 1 :
+            result = chainName
         elif len(chainName) > 1 :
             result = chainName[:1] + ':' + chainName[1:]
         else:
@@ -111,6 +130,8 @@ class Generate25PDBComapreReport:
 
 
     def classificationMatches(self, scopClass, htmlClass) :
+        ''' compares two strings and returns true if they match '''
+        ''' compare the 25pdb class a/b/c/d with scop class long names '''
         print('matching scopClass '+scopClass+' with htmlClass '+htmlClass)
         if scopClass == 'a' and htmlClass == 'Allalphaproteins' :
             result = True
